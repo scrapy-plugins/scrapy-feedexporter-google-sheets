@@ -59,5 +59,5 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
     
 ## Feed Options
 - Currently, this feed exporter only supports `csv` format. 
-- The `append_mode` [feed option](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feed-options) controls whether to append data to the Google Sheet or overwrite it.
+- The `append_mode` [feed option](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feed-options) controls whether to append data to the Google Sheet or overwrite it. Default = `False`.
 
