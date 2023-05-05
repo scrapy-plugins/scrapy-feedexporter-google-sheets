@@ -1,6 +1,6 @@
 import csv
 import logging
-from io import StringIO
+from io import TextIOWrapper
 
 import gspread
 from scrapy.exceptions import NotConfigured
@@ -43,13 +43,12 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
 
     def _store_in_thread(self, file):
         file.seek(0)
-        csv_text = file.read().decode("utf-8")
-        csv_reader = csv.reader(StringIO(csv_text))
-        csv_data = list(csv_reader)
+        csv_data = csv.reader(
+            TextIOWrapper(file, newline="\r\n")
+        )
+        data_header = next(csv_data)
 
-        items = [dict(zip(csv_data[0], item)) for item in csv_data[1:]]
-
-        header = self.fields or csv_data[0]
+        header = self.fields or data_header
         if self.overwrite:
             logger.warning("FEED option 'overwrite' was set to True.")
             self.sheet.clear()
@@ -65,9 +64,12 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
             else:
                 self.sheet.append_row(header)
 
-        for item in items:
-            row = [item.get(field) for field in header]
-            self.sheet.append_row(row)
+        rows = []
+        for line in csv_data:
+            row = dict(zip(data_header, line))
+            rows.append([v for k, v in row.items() if k in header])
+
+        self.sheet.append_rows(rows)
 
     @staticmethod
     def parse_gsheets_uri(uri):
