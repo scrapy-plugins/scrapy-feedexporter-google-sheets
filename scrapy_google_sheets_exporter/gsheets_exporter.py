@@ -22,7 +22,7 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
         self.spreadsheet = self.gc.open_by_key(self.spreadsheet_key)
         self.sheet = self.spreadsheet.worksheet(self.sheet_name)
         self.feed_options = feed_options or {}
-        self.append_mode = self.feed_options.get("append_mode", False)
+        self.overwrite = self.feed_options.get("overwrite", False)
         self.fields = self.feed_options.get("fields", [])
         self.format = self.feed_options.get("format", "csv")
 
@@ -50,7 +50,8 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
         items = [dict(zip(csv_data[0], item)) for item in csv_data[1:]]
 
         header = self.fields or csv_data[0]
-        if not self.append_mode:
+        if self.overwrite:
+            logger.warning("FEED option 'overwrite' was set to True.")
             self.sheet.clear()
             self.sheet.append_row(header)
 
@@ -58,8 +59,8 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
             if self.sheet.row_values(1):
                 header = self.sheet.row_values(1)
                 logger.warning(
-                    "FEED option 'append_mode' was set to True. "
-                    f"The following fields will be exported: {header}."
+                    "FEED option 'overwrite' was set to False. Since we are appending to"
+                    f"existing data, only the following fields will be exported: {header}."
                 )
             else:
                 self.sheet.append_row(header)

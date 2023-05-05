@@ -50,7 +50,7 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
     FEEDS = {
         "gsheets://{spreadsheet_key}/{worksheet_name}": {
             "format": "csv",
-            "append_mode": False
+            "overwrite": True
         }
     }
     ```
@@ -59,5 +59,5 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
     
 ## Feed Options
 - Currently, this feed exporter only supports `csv` format. 
-- The `append_mode` [feed option](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feed-options) controls whether to append data to the Google Sheet or overwrite it. Default = `False`.
+- The `overwrite` [feed option](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feed-options) controls whether to append data to the end rows of the Google Sheet or overwrite it completely. Default = `False`.
 
