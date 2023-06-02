@@ -42,22 +42,24 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
     ```
 * Share the Google Sheet file with the service account's email (available in GOOGLE_CREDENTIALS as `client_email`) and give it `Editor` access.
 
-* Configure the Scrapy settings [FEEDS](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feeds) by passing the key and worksheet name where the feed needs to be exported.
+* Configure the Scrapy settings [FEEDS](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feeds) by passing the Google Sheet file URI where the feed should be exported. User must also provide the worksheet name in the "sheet_name" feed option.
   
     For example:
     ```python
     # settings.py
     FEEDS = {
-        "gsheets://{spreadsheet_key}/{worksheet_name}": {
+        "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}": {
             "format": "csv",
-            "overwrite": True
+            "overwrite": True,
+            "sheet_name": "Sheet1"
         }
     }
     ```
   - You can get the `spreadsheet_key` from the URL of the shared Google Sheet file. It's the long string of characters after `/d/` and before `/edit`
-    - e.g: `https://docs.google.com/spreadsheets/d/{spreadsheet_key}/edit#gid=0`
+    - e.g: `https://docs.google.com/spreadsheets/d/1fWJgq5yuOdeN3YnkBZiTD0VhB1MLzBNomz0s9YwBREo/edit#gid=0`
     
-## Feed Options
+## [Feed Options](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feed-options)
 - This feed exporter only supports the `csv` format. 
-- The `overwrite` [feed option](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feed-options) controls whether to append data to the end rows of the Google Sheet or overwrite it completely. Default = `False`.
+- User must provide the name of the sheet where the data should be exported to in the `sheet_name` feed option.
+- The `overwrite` feed option controls whether to append data to the end rows of the Google Sheet or overwrite it completely. Default = `False`.
 

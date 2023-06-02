@@ -3,6 +3,7 @@ import logging
 from io import TextIOWrapper
 
 import gspread
+from gspread.exceptions import NoValidUrlKeyFound
 from scrapy.exceptions import NotConfigured
 from scrapy.extensions.feedexport import BlockingFeedStorage, build_storage
 
@@ -18,13 +19,25 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
                 "Must specify GOOGLE_CREDENTIALS (dict) in the spider settings."
             )
 
-        self.spreadsheet_key, self.sheet_name = self.parse_gsheets_uri(uri)
-        self.spreadsheet = self.gc.open_by_key(self.spreadsheet_key)
-        self.sheet = self.spreadsheet.worksheet(self.sheet_name)
+        try:
+            self.spreadsheet = self.gc.open_by_url(uri)
+        except NoValidUrlKeyFound:
+            raise NotConfigured(
+                "URI provided in FEEDS is not valid. Please provide a valid URI in the format "
+                "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}"
+            )
         self.feed_options = feed_options or {}
+        self.sheet_name = self.feed_options.get("sheet_name")
         self.overwrite = self.feed_options.get("overwrite", False)
         self.fields = self.feed_options.get("fields", [])
         self.format = self.feed_options.get("format", "csv")
+
+        if not self.sheet_name:
+            raise NotConfigured(
+                "Please specify the sheet_name in the feed options."
+            )
+
+        self.sheet = self.spreadsheet.worksheet(self.sheet_name)
 
         if self.format != "csv":
             raise NotConfigured(
@@ -50,7 +63,6 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
 
         header = self.fields or data_header
         if self.overwrite:
-            logger.warning("FEED option 'overwrite' was set to True.")
             self.sheet.clear()
             self.sheet.append_row(header)
 
@@ -71,12 +83,3 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
 
         self.sheet.append_rows(rows)
 
-    @staticmethod
-    def parse_gsheets_uri(uri):
-        parsed_uri = uri.split("//")[-1].split("/")
-        if len(parsed_uri) >= 2:
-            return parsed_uri[:2]
-        raise Exception(
-            "Invalid Google Sheets URI. Please provide URI with this format in FEEDS: "
-            "'gsheets://{spreadsheet_key}/{worksheet_name}'"
-        )
