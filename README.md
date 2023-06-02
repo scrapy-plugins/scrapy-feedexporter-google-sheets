@@ -58,6 +58,6 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
     - e.g: `https://docs.google.com/spreadsheets/d/{spreadsheet_key}/edit#gid=0`
     
 ## Feed Options
-- Currently, this feed exporter only supports `csv` format. 
+- This feed exporter only supports the `csv` format. 
 - The `overwrite` [feed option](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feed-options) controls whether to append data to the end rows of the Google Sheet or overwrite it completely. Default = `False`.
 
