@@ -12,10 +12,27 @@ logger = logging.getLogger(__name__)
 
 class GoogleSheetsFeedStorage(BlockingFeedStorage):
     def __init__(self, uri, credentials, *, feed_options=None):
+
+        self.feed_options = feed_options or {}
+        self.sheet_name = self.feed_options.get("sheet_name")
+        self.overwrite = self.feed_options.get("overwrite", False)
+        self.fields = self.feed_options.get("fields", [])
+        self.format = self.feed_options.get("format", "csv")
+
         if not credentials:
             raise NotConfigured(
                 "Must specify GOOGLE_CREDENTIALS (dict) in the spider settings."
             )
+        if not self.sheet_name:
+            raise NotConfigured(
+                "Must specify the sheet_name in the feed options of the FEEDS settings."
+            )
+        if self.format != "csv":
+            raise NotConfigured(
+                "This feed exporter only supports csv format. "
+                f"Please update the FEEDS settings by replacing {self.format} format."
+            )
+
         self.gc = gspread.service_account_from_dict(credentials)
 
         try:
@@ -25,24 +42,8 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
                 "URI provided in FEEDS is not valid. Please provide a valid URI in the format "
                 "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}"
             )
-        self.feed_options = feed_options or {}
-        self.sheet_name = self.feed_options.get("sheet_name")
-        self.overwrite = self.feed_options.get("overwrite", False)
-        self.fields = self.feed_options.get("fields", [])
-        self.format = self.feed_options.get("format", "csv")
-
-        if not self.sheet_name:
-            raise NotConfigured(
-                "Please specify the sheet_name in the feed options."
-            )
 
         self.sheet = self.spreadsheet.worksheet(self.sheet_name)
-
-        if self.format != "csv":
-            raise NotConfigured(
-                "This feed exporter only supports csv format. "
-                f"Please update the FEEDS settings by replacing {self.format} format."
-            )
 
     @classmethod
     def from_crawler(cls, crawler, uri, *, feed_options=None):
@@ -81,4 +82,3 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
             rows.append([v for k, v in row.items() if k in header])
 
         self.sheet.append_rows(rows)
-
