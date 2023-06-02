@@ -11,12 +11,11 @@ logger = logging.getLogger(__name__)
 
 class GoogleSheetsFeedStorage(BlockingFeedStorage):
     def __init__(self, uri, credentials, *, feed_options=None):
-        if credentials:
-            self.gc = gspread.service_account_from_dict(credentials)
-        else:
+        if not credentials:
             raise NotConfigured(
                 "Must specify GOOGLE_CREDENTIALS (dict) in the spider settings."
             )
+        self.gc = gspread.service_account_from_dict(credentials)
 
         self.spreadsheet_key, self.sheet_name = self.parse_gsheets_uri(uri)
         self.spreadsheet = self.gc.open_by_key(self.spreadsheet_key)
