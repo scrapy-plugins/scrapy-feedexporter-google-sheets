@@ -1,6 +1,7 @@
 import csv
 import logging
 from io import TextIOWrapper
+from urllib.parse import urlparse, parse_qs
 
 import gspread
 from gspread.exceptions import NoValidUrlKeyFound
@@ -14,7 +15,6 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
     def __init__(self, uri, credentials, *, feed_options=None):
 
         self.feed_options = feed_options or {}
-        self.sheet_name = self.feed_options.get("sheet_name")
         self.overwrite = self.feed_options.get("overwrite", False)
         self.fields = self.feed_options.get("fields", [])
         self.format = self.feed_options.get("format", "csv")
@@ -22,10 +22,6 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
         if not credentials:
             raise NotConfigured(
                 "Must specify GOOGLE_CREDENTIALS (dict) in the spider settings."
-            )
-        if not self.sheet_name:
-            raise NotConfigured(
-                "Must specify the sheet_name in the feed options of the FEEDS settings."
             )
         if self.format != "csv":
             raise NotConfigured(
@@ -43,7 +39,7 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
                 "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}"
             )
 
-        self.sheet = self.spreadsheet.worksheet(self.sheet_name)
+        self.sheet = self._parse_and_select_sheet(uri, self.spreadsheet)
 
     @classmethod
     def from_crawler(cls, crawler, uri, *, feed_options=None):
@@ -82,3 +78,18 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
             rows.append([v for k, v in row.items() if k in header])
 
         self.sheet.append_rows(rows)
+
+    def _parse_and_select_sheet(self, uri, spreadsheet):
+        parsed_url = parse_qs(urlparse(uri).fragment)
+        sheet_id = parsed_url.get("gid", [None])[0]
+        if sheet_id:
+            for sheet in spreadsheet.worksheets():
+                if sheet.id == sheet_id:
+                    return sheet
+        sheet = spreadsheet.get_worksheet(0)
+        self.logger.warning(
+            f"Could not parse sheet id from {uri}. Using first sheet instead: {sheet.title}"
+        )
+        return sheet
+
+
