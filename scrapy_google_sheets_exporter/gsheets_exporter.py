@@ -1,7 +1,7 @@
 import csv
 import logging
 from io import TextIOWrapper
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 import gspread
 from gspread.exceptions import NoValidUrlKeyFound
@@ -16,7 +16,6 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
 
         self.feed_options = feed_options or {}
         self.overwrite = self.feed_options.get("overwrite", False)
-        self.fields = self.feed_options.get("fields", [])
         self.format = self.feed_options.get("format", "csv")
 
         if not credentials:
@@ -26,7 +25,7 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
         if self.format != "csv":
             raise NotConfigured(
                 "This feed exporter only supports csv format. "
-                f"Please update the FEEDS settings by replacing {self.format} format."
+                f"Please update the FEEDS setting, replacing {self.format} format with csv."
             )
 
         self.gc = gspread.service_account_from_dict(credentials)
@@ -35,8 +34,8 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
             self.spreadsheet = self.gc.open_by_url(uri)
         except NoValidUrlKeyFound:
             raise NotConfigured(
-                "URI provided in FEEDS is not valid. Please provide a valid URI in the format "
-                "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}"
+                "URI provided in FEEDS setting is not valid. Please provide a valid URI in the format "
+                "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}/edit#gid={worksheet_id}"
             )
 
         self.sheet = self._parse_and_select_sheet(uri, self.spreadsheet)
@@ -53,43 +52,31 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
     def _store_in_thread(self, file):
         file.seek(0)
         csv_data = csv.reader(
-            TextIOWrapper(file, newline="\r\n")
+            TextIOWrapper(file)
         )
-        data_header = next(csv_data)
-
-        header = self.fields or data_header
         if self.overwrite:
             self.sheet.clear()
-            self.sheet.append_row(header)
-
-        else:
-            if self.sheet.row_values(1):
-                header = self.sheet.row_values(1)
-                logger.warning(
-                    "FEED option 'overwrite' was set to False. Since we are appending to"
-                    f"existing data, only the following fields will be exported: {header}."
-                )
-            else:
-                self.sheet.append_row(header)
-
-        rows = []
-        for line in csv_data:
-            row = dict(zip(data_header, line))
-            rows.append([v for k, v in row.items() if k in header])
-
+        rows = [row for row in csv_data]
         self.sheet.append_rows(rows)
 
-    def _parse_and_select_sheet(self, uri, spreadsheet):
+    @staticmethod
+    def _parse_and_select_sheet(uri, spreadsheet):
         parsed_url = parse_qs(urlparse(uri).fragment)
         sheet_id = parsed_url.get("gid", [None])[0]
-        if sheet_id:
-            for sheet in spreadsheet.worksheets():
-                if sheet.id == sheet_id:
-                    return sheet
+
+        if not sheet_id:
+            logger.warning(
+                f"Not able to parse worksheet id from {uri}, please make sure to match format "
+                "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}/edit#gid={worksheet_id}."
+            )
+
+        for sheet in spreadsheet.worksheets():
+            if str(sheet.id) == str(sheet_id):
+                return sheet
+
         sheet = spreadsheet.get_worksheet(0)
-        self.logger.warning(
-            f"Could not parse sheet id from {uri}. Using first sheet instead: {sheet.title}"
+        logger.warning(
+            f"Not able to find worksheet with id {sheet_id} in {uri}, "
+            f"using first worksheet to export data instead: {sheet.title}."
         )
         return sheet
-
-

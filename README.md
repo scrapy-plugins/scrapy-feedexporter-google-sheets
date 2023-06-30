@@ -39,7 +39,7 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
         "auth_provider_x509_cert_url": "auth_provider_x509_cert_url here", 
         "client_x509_cert_url": "client_x509_cert_url here" 
   }
-    ```
+  ```
 * Share the Google Sheet file with the service account's email (available in GOOGLE_CREDENTIALS as `client_email`) and give it `Editor` access.
 
 * Configure the Scrapy settings [FEEDS](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feeds) by passing the Google Sheet file URI where the feed should be exported.
@@ -49,16 +49,21 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
     # settings.py
     FEEDS = {
         "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}/edit#gid={worksheet_id}": {
-            "format": "csv",
+            "format": "csv",  # mandatory
             "overwrite": True
         }
     }
     ```
   - You can get the `spreadsheet_key` and `worksheet_id` from the URL of the shared Google Sheet file
     - e.g: `https://docs.google.com/spreadsheets/d/1fWJgq5yuOdeN3YnkBZiTD0VhB1MLzBNomz0s9YwBREo/edit#gid=1261678709`
-  - IMPORTANT: If the worksheet id is not provided (i.e.: there's no `/edit#gid={worksheet_id}` in the end of the URL), this exporter will export data to the first worksheet as default.
+  - IMPORTANT: If the worksheet id is not provided (i.e.: there is no `/edit#gid={worksheet_id}` in the end of the URL), this exporter will export data to the **first worksheet** as default.
     
 ## [Feed Options](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feed-options)
-- This feed exporter only supports `csv` format and assumes the underlying [csv exporter](https://docs.scrapy.org/en/2.3/topics/exporters.html#csvitemexporter) is configured with `include_headers_line=True` (Scrapy's default).
-- The `overwrite` feed option (default=False) controls whether to append data to the end rows of the given sheet or clear the data and overwrite it completely (overwrite=True).  If using it in append mode (default), please ensure the fields to export match the existing data in the sheet by configuring the [FEED_EXPORT_FIELDS](https://docs.scrapy.org/en/1.7/topics/feed-exports.html#std:setting-FEED_EXPORT_FIELDS) settings.  
+- This feed exporter only supports `csv` format. This setting is mandatory, there is no fallback value.
+- The `overwrite` feed option (default = False) determines whether data should be appended to the existing rows in the worksheet or completely overwritten (overwrite = True).
+- If you are using this exporter in append mode (i.e., overwrite = False), please make sure that the fields to be exported match the data already present in the worksheet. This can be achieved by passing the feed option `fields` or configuring the [FEED_EXPORT_FIELDS](https://docs.scrapy.org/en/1.7/topics/feed-exports.html#std:setting-FEED_EXPORT_FIELDS) setting.  
+- If you prefer not to export the CSV headers to the worksheet (for example, when using the exporter in append mode), please include the following feed option:
+  -`"item_export_kwargs": {"include_headers_line": False}`
+
+
 
