@@ -22,7 +22,7 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
   FEED_STORAGES = {'gsheets': 'scrapy_google_sheets_exporter.gsheets_exporter.GoogleSheetsFeedStorage'}
   ```
 
-* Configure [authentication](https://developers.google.com/identity/protocols/oauth2/service-account) by passing the Google service account credentials as a dictionary in the Scrapy settings `GOOGLE_CREDENTIALS`.
+* Configure [authentication](https://developers.google.com/identity/protocols/oauth2/service-account) by providing Google service account credentials as a dictionary in the Scrapy settings `GOOGLE_CREDENTIALS`.
   
   For example:
   ```python
@@ -60,10 +60,11 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
     
 ## [Feed Options](https://docs.scrapy.org/en/latest/topics/feed-exports.html#feed-options)
 - This feed exporter only supports `csv` format. This setting is mandatory, there is no fallback value.
-- The `overwrite` feed option (default = False) determines whether data should be appended to the existing rows in the worksheet or completely overwritten (overwrite = True).
+- The `overwrite` feed option (default = False) determines whether data should be appended to the existing rows in the worksheet or overwrite the data in the worksheet completely, when set to True.
 - If you are using this exporter in append mode (i.e., overwrite = False), please make sure that the fields to be exported match the data already present in the worksheet. This can be achieved by passing the feed option `fields` or configuring the [FEED_EXPORT_FIELDS](https://docs.scrapy.org/en/1.7/topics/feed-exports.html#std:setting-FEED_EXPORT_FIELDS) setting.  
 - If you prefer not to export the CSV headers to the worksheet (for example, when using the exporter in append mode), please include the following feed option:
   -`"item_export_kwargs": {"include_headers_line": False}`
+- The feed option `batch_item_count` is not supported in this exporter.
 
 
 
