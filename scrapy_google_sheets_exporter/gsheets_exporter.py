@@ -17,6 +17,8 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
         self.feed_options = feed_options or {}
         self.overwrite = self.feed_options.get("overwrite", False)
         self.format = self.feed_options.get("format", "csv")
+        self.batch_size = self.feed_options.get("batch_size", 0)
+        self.max_payload_size = 2 * 1024 * 1024  # 2 MB as recommended by Google
 
         if not credentials:
             raise NotConfigured(
@@ -56,8 +58,22 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
         )
         if self.overwrite:
             self.sheet.clear()
-        rows = [row for row in csv_data]
-        self.sheet.append_rows(rows)
+
+        batch = []
+        payload_size = 0
+        for row in csv_data:
+            row_size = sum(len(cell.encode('utf-8')) for cell in row)
+            batch.append(row)
+            payload_size += row_size
+            if payload_size >= self.max_payload_size or \
+                    len(batch) >= self.batch_size:
+                self.sheet.append_rows(batch)
+                payload_size = 0
+                batch = []
+
+        # remaining batch
+        if batch:
+            self.sheet.append_rows(batch)
 
     @staticmethod
     def _parse_and_select_sheet(uri, spreadsheet):

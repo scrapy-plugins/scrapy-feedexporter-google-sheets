@@ -64,7 +64,7 @@ Follow these steps to use the Google Sheets Exporter with Scrapy:
 - If you are using this exporter in append mode (i.e., overwrite = False), please make sure that the fields to be exported match the data already present in the worksheet. This can be achieved by passing the feed option `fields` or configuring the [FEED_EXPORT_FIELDS](https://docs.scrapy.org/en/1.7/topics/feed-exports.html#std:setting-FEED_EXPORT_FIELDS) setting.  
 - If you prefer not to export the CSV headers to the worksheet (for example, when using the exporter in append mode), please include the following feed option:
   -`"item_export_kwargs": {"include_headers_line": False}`
-- The feed option `batch_item_count` is not supported in this exporter.
+- This exporter does not support the `batch_item_count` feed option. Instead, please use `batch_size` (number of items in each batch) if you want to insert rows in batches into the spreadsheet. Please note that the batch will be capped at a size of 2 MB, in line with Google's recommendation.
 
 
 
