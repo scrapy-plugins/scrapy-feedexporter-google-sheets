@@ -18,16 +18,16 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
         self.overwrite = self.feed_options.get("overwrite", False)
         self.format = self.feed_options.get("format", "csv")
         self.batch_size = self.feed_options.get("batch_size", 0)
-        self.max_payload_size = 2 * 1024 * 1024  # 2 MB as recommended by Google
+        self.max_payload_size = 2 * 1024 * 1024  # 2MB recommended by Google
 
         if not credentials:
             raise NotConfigured(
-                "Must specify GOOGLE_CREDENTIALS (dict) in the spider settings."
+                "Must specify GOOGLE_CREDENTIALS (dict) in spider settings"
             )
         if self.format != "csv":
             raise NotConfigured(
-                "This feed exporter only supports csv format. "
-                f"Please update the FEEDS setting, replacing {self.format} format with csv."
+                "This feed exporter only supports csv format. Please update"
+                f"FEEDS setting replacing {self.format} format with csv"
             )
 
         self.gc = gspread.service_account_from_dict(credentials)
@@ -36,7 +36,7 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
             self.spreadsheet = self.gc.open_by_url(uri)
         except NoValidUrlKeyFound:
             raise NotConfigured(
-                "URI provided in FEEDS setting is not valid. Please provide a valid URI in the format "
+                "URI provided in FEEDS is not valid, please provide a valid URI in the format "
                 "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}/edit#gid={worksheet_id}"
             )
 
@@ -82,7 +82,7 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
 
         if not sheet_id:
             logger.warning(
-                f"Not able to parse worksheet id from {uri}, please make sure to match format "
+                f"Not able to parse worksheet id from {uri}, please ensure to match format "
                 "gsheets://docs.google.com/spreadsheets/d/{spreadsheet_key}/edit#gid={worksheet_id}."
             )
 
