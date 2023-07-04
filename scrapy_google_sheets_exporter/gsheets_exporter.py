@@ -62,11 +62,11 @@ class GoogleSheetsFeedStorage(BlockingFeedStorage):
         batch = []
         payload_size = 0
         for row in csv_data:
-            row_size = sum(len(cell.encode('utf-8')) for cell in row)
+            row_size = sum(len(str(cell).encode('utf-8')) for cell in row)
             batch.append(row)
             payload_size += row_size
             if payload_size >= self.max_payload_size or \
-                    len(batch) >= self.batch_size:
+                    (len(batch) >= self.batch_size and self.batch_size):
                 self.sheet.append_rows(batch)
                 payload_size = 0
                 batch = []
